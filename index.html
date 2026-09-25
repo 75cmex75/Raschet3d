@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Расчёт стоимости 3D детали</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            margin: 12px;
+            font-size: 0.85em;
+        }
+        .container {
+            max-width: 1250px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 12px 15px;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin: 0 0 10px 0;
+            font-size: 1.25em;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1.2fr;
+            gap: 12px;
+            align-items: start;
+        }
+        .section {
+            background: #fdfdfd;
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+            padding: 10px;
+        }
+        .section-title {
+            font-weight: bold;
+            font-size: 0.95em;
+            margin-bottom: 8px;
+            color: #2b6cb0;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 3px;
+        }
+        .form-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .form-group label {
+            flex: 1;
+            font-size: 0.9em;
+            padding-right: 5px;
+        }
+        .form-group .inputs {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            font-size: 0.9em;
+        }
+        .t-lbl {
+            font-size: 0.9em;
+            color: #4a5568;
+            margin-right: 2px;
+        }
+        input {
+            width: 50px;
+            padding: 3px;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            text-align: right;
+            font-size: 0.95em;
+        }
+        .unit {
+            font-size: 0.85em;
+            color: #718096;
+            width: 55px;
+            display: inline-block;
+        }
+        .results-section {
+            background: #edf2f7;
+            border: 1px solid #cbd5e0;
+        }
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 4px;
+        }
+        .result-box {
+            background: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border-left: 3px solid #48bb78;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 22px;
+        }
+        .result-box.total {
+            border-left-color: #e53e3e;
+            background: #fff5f5;
+        }
+        .result-box label {
+            font-size: 0.88em;
+            color: #4a5568;
+        }
+        .result-box .val-block {
+            font-weight: bold;
+            font-size: 1.05em;
+            color: #1a202c;
+            white-space: nowrap;
+        }
+        .note {
+            grid-column: span 2;
+            font-size: 0.9em;
+            color: #718096;
+            font-style: italic;
+            margin-top: 5px;
+            padding-left: 2px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Расчёт стоимости 3D детали</h1>
+    
+    <div class="grid">
+        <!-- КОЛОНКА 1: БАЗОВЫЕ ЦЕНЫ -->
+        <div class="section">
+            <div class="section-title">💰 Цены и тарифы</div>
+            <div class="form-group"><label>Вес катушки</label><div class="inputs"><input type="text" id="cw" value="1000"><span class="unit">грамм</span></div></div>
+            <div class="form-group"><label>Цена катушки</label><div class="inputs"><input type="text" id="cp" value="30"><span class="unit">рублей</span></div></div>
+            <div class="form-group"><label>Цена 1 кВтч</label><div class="inputs"><input type="text" id="kp" value="1"><span class="unit">рублей</span></div></div>
+            <div class="form-group"><label>Ставка моделирования</label><div class="inputs"><input type="text" id="rm" value="5"><span class="unit">руб/час</span></div></div>
+            <div class="form-group"><label>Ставка печати</label><div class="inputs"><input type="text" id="rpr" value="1"><span class="unit">руб/час</span></div></div>
+            <div class="form-group"><label>Ставка постобработки</label><div class="inputs"><input type="text" id="rpo" value="5"><span class="unit">руб/час</span></div></div>
+        </div>
+
+        <!-- КОЛОНКА 2: ЗАТРАТЫ -->
+        <div class="section">
+            <div class="section-title">📊 Затраты на деталь</div>
+            <div class="form-group"><label>Расход материала</label><div class="inputs"><input type="text" id="mu" value="300"><span class="unit">грамм</span></div></div>
+            <div class="form-group"><label>Мощность принтера</label><div class="inputs"><input type="text" id="pw" value="1"><span class="unit">кВт</span></div></div>
+            
+            <div class="form-group">
+                <label>Моделирование (время)</label>
+                <div class="inputs">
+                    <input type="text" id="tm_h" value="0"><span class="t-lbl">часов</span>
+                    <input type="text" id="tm_m" value="10"><span class="t-lbl">минут</span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Печать (время)</label>
+                <div class="inputs">
+                    <input type="text" id="tp_h" value="8"><span class="t-lbl">часов</span>
+                    <input type="text" id="tp_m" value="9"><span class="t-lbl">минут</span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Постобработка (время)</label>
+                <div class="inputs">
+                    <input type="text" id="tpo_h" value="0"><span class="t-lbl">часов</span>
+                    <input type="text" id="tpo_m" value="5"><span class="t-lbl">минут</span>
+                </div>
+            </div>
+            
+            <div class="form-group"><label>Доставка изделия</label><div class="inputs"><input type="text" id="dl" value="2"><span class="unit">рублей</span></div></div>
+        </div>
+
+        <!-- КОЛОНКА 3: РАСЧЕТЫ -->
+        <div class="section results-section">
+            <div class="section-title">📈 Результаты расчетов</div>
+            <div class="results-grid">
+                <div class="result-box"><label>Чистый материал</label><div class="val-block"><span id="o_m">0.00</span> р.</div></div>
+                <div class="result-box"><label>Электроэнергия</label><div class="val-block"><span id="o_e">0.00</span> р.</div></div>
+                <div class="result-box"><label>Моделирование</label><div class="val-block"><span id="o_mod">0.00</span> р.</div></div>
+                <div class="result-box"><label>Печать</label><div class="val-block"><span id="o_pr">0.00</span> р.</div></div>
+                <div class="result-box"><label>Постобработка</label><div class="val-block"><span id="o_pst">0.00</span> р.</div></div>
+                <div class="result-box"><label>Доставка изделия</label><div class="val-block"><span id="o_dl">0.00</span> р.</div></div>
+                <div class="result-box total"><label>Цена детали</label><div class="val-block" style="color: #c53030;"><span id="o_fst">0.00</span> р.</div></div>
+            </div>
+        </div>
+
+        <!-- НАДПИСЬ ПОД 1 И 2 СТОЛБЦОМ -->
+        <div class="note">*цифры вводить через точку.</div>
+    </div>
+</div>
+
+<script>
+    function calculate() {
+        var n = function(id) {
+            var el = document.getElementById(id);
+            if (!el) return 0;
+            var v = parseFloat(el.value.toString().replace(',', '.'));
+            return isNaN(v) ? 0 : v;
+        };
+
+        var cw = n('cw') || 1;
+        var cp = n('cp');
+        var kp = n('kp');
+        var rm = n('rm');
+        var rpr = n('rpr');
+        var rpo = n('rpo');
+        
+        var mu = n('mu');
+        var pw = n('pw');
+        var dl = n('dl');
+
+        var tm = n('tm_h') + (n('tm_m') / 60);
+        var tp = n('tp_h') + (n('tp_m') / 60);
+        var tpo = n('tpo_h') + (n('tpo_m') / 60);
+
+        var m = (cp / cw) * mu;
+        var e = tp * pw * kp;
+        var mod = tm * rm;
+        var pr = tp * rpr;
+        var pst = tpo * rpo;
+
+        var fst = m + e + mod + pr + pst + dl;
+
+        var show = function(id, val) {
+            document.getElementById(id).innerText = val.toFixed(2);
+        };
+
+        show('o_m', m);
+        show('o_e', e);
+        show('o_mod', mod);
+        show('o_pr', pr);
+        show('o_pst', pst);
+        show('o_dl', dl);
+        show('o_fst', fst);
+
+        var inputs = document.querySelectorAll('input');
+        for (var i = 0; i < inputs.length; i++) {
+            try {
+                localStorage.setItem('3d_calc_' + inputs[i].id, inputs[i].value);
+            } catch(e) {}
+        }
+    }
+
+    var inputs = document.querySelectorAll('input');
+    for (var i = 0; i < inputs.length; i++) {
+        try {
+            var saved = localStorage.getItem('3d_calc_' + inputs[i].id);
+            if (saved !== null) {
+                inputs[i].value = saved;
+            }
+        } catch(e) {}
+        inputs[i].addEventListener('input', calculate);
+    }
+
+    calculate();
+</script>
+
+</body>
+</html>
